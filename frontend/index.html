@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pilcha de Primera - Pedidos</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 0 auto; padding: 16px; color: #222; }
+    h1 { font-size: 1.4rem; }
+    section { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+    input, button { font: inherit; padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+    button { background: #1d6f5c; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Pilcha de Primera - Pedidos</h1>
+
+  <section>
+    <h2>Catálogo</h2>
+    <button onclick="llamar('GET','/prendas')">Ver prendas</button>
+  </section>
+
+  <section>
+    <h2>Hacer pedido</h2>
+    <input id="prendaId" type="number" placeholder="ID de la prenda">
+    <input id="cantidad" type="number" placeholder="Cantidad" value="1">
+    <input id="cliente" placeholder="Tu nombre">
+    <input id="email" type="email" placeholder="Tu email">
+    <button onclick="pedir()">Reservar</button>
+  </section>
+
+  <section>
+    <h2>Pagar o cancelar</h2>
+    <input id="pedidoId" type="number" placeholder="ID del pedido">
+    <button onclick="llamar('POST','/pedidos/'+v('pedidoId')+'/pagar')">Pagar</button>
+    <button onclick="llamar('POST','/pedidos/'+v('pedidoId')+'/cancelar')" style="background:#b3402a">Cancelar</button>
+  </section>
+
+  <section>
+    <h2>Administradora</h2>
+    <input id="token" type="password" placeholder="Token de administradora">
+    <input id="nombre" placeholder="Nombre de la prenda">
+    <input id="precio" type="number" placeholder="Precio">
+    <input id="stock" type="number" placeholder="Stock">
+    <button onclick="cargarPrenda()">Cargar prenda</button>
+    <button onclick="llamar('GET','/pedidos',null,true)">Ver todos los pedidos</button>
+  </section>
+
+  <h3>Respuesta del backend</h3>
+  <pre id="salida">Todavía no hiciste ninguna consulta.</pre>
+
+  <script>
+    // Cambiar por la URL del backend en Render cuando esté publicado.
+    const API_URL = 'http://localhost:3000';
+
+    const v = (id) => document.getElementById(id).value;
+
+    async function llamar(metodo, ruta, cuerpo, admin) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (admin || (metodo === 'POST' && ruta === '/prendas')) headers.Authorization = 'Bearer ' + v('token');
+      try {
+        const r = await fetch(API_URL + ruta, {
+          method: metodo, headers, body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+        });
+        const data = await r.json();
+        document.getElementById('salida').textContent = r.status + ' ' + JSON.stringify(data, null, 2);
+      } catch (e) {
+        document.getElementById('salida').textContent = 'No se pudo conectar con el backend. Si está en Render gratis, puede tardar ~30 segundos en despertar.';
+      }
+    }
+
+    function pedir() {
+      llamar('POST', '/pedidos', {
+        prendaId: Number(v('prendaId')), cantidad: Number(v('cantidad')),
+        cliente: v('cliente'), email: v('email'),
+      });
+    }
+
+    function cargarPrenda() {
+      llamar('POST', '/prendas', { nombre: v('nombre'), precio: Number(v('precio')), stock: Number(v('stock')) }, true);
+    }
+  </script>
+</body>
+</html>
